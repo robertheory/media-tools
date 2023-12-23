@@ -1,5 +1,6 @@
 import { fetchFile } from '@ffmpeg/util'
 import { useEffect, useRef, useState } from 'react'
+import { Button } from './components/ui/button'
 import { ffmpegClient, loadFfmpeg } from './services/ffmpeg'
 
 function App() {
@@ -41,7 +42,7 @@ function App() {
   }, [])
 
   return (
-    <>
+    <div className=" w-screen h-screen flex flex-col justify-center items-center">
       <video
         ref={videoRef}
         controls
@@ -52,9 +53,9 @@ function App() {
       ></video>
 
       <br />
-      <button onClick={transcode}>Transcode</button>
+      <Button onClick={transcode}>Transcode</Button>
       <p>{log}</p>
-    </>
+    </div>
   )
 }
 
