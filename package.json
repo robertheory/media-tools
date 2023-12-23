@@ -1,8 +1,13 @@
 {
-  "name": "video-tools",
+  "name": "convert-tools",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engineStrict": true,
+  "engines": {
+    "node": ">=18",
+    "npm": ">=9"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
