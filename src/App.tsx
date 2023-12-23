@@ -1,56 +1,60 @@
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
-import { useRef, useState } from 'react';
+import { fetchFile } from '@ffmpeg/util';
+import { useEffect, useRef, useState } from 'react';
+import { ffmpegClient, loadFfmpeg } from './services/ffmpeg';
 
 function App() {
-  const [loaded, setLoaded] = useState(false);
-  const ffmpegRef = useRef(new FFmpeg());
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const messageRef = useRef<HTMLParagraphElement | null>(null);
-
-  const load = async () => {
-    const ffmpeg = ffmpegRef.current;
-    ffmpeg.on('log', ({ message }) => {
-      if (messageRef.current) messageRef.current.innerHTML = message;
-    });
-
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`/ffmpeg-core.js`, 'text/javascript'),
-      wasmURL: await toBlobURL(`/ffmpeg-core.wasm`, 'application/wasm'),
-      workerURL: await toBlobURL(`/ffmpeg-core.worker.js`, 'text/javascript'),
-    });
-    setLoaded(true);
-  };
+  const [log, setLog] = useState('');
 
   const transcode = async () => {
-    const videoURL = 'http://localhost:5173/sample-video.avi';
+    await loadFfmpeg();
 
-    const ffmpeg = ffmpegRef.current;
+    const videoURL = 'http://localhost:5173/bunny.webm';
 
-    await ffmpeg.writeFile('input.avi', await fetchFile(videoURL));
+    const ffmpeg = ffmpegClient;
 
-    await ffmpeg.exec(['-i', 'input.avi', 'output.mp4']);
+    await ffmpeg.writeFile('input.webm', await fetchFile(videoURL));
+
+    await ffmpeg.exec(['-i', 'input.webm', 'output.mp4']);
 
     const fileData = await ffmpeg.readFile('output.mp4');
 
     const data = new Uint8Array(fileData as ArrayBuffer);
 
     if (videoRef.current) {
+      videoRef.current.style.display = 'block';
+
       videoRef.current.src = URL.createObjectURL(
         new Blob([data.buffer], { type: 'video/mp4' })
       );
     }
   };
 
-  return loaded ? (
+  useEffect(() => {
+    ffmpegClient.on('log', ({ message }) => {
+      setLog(message);
+    });
+
+    // ffmpegClient.on('progress', ({ progress, time }) => {
+    //   console.log('progress, time', progress, time);
+    // });
+  }, []);
+
+  return (
     <>
-      <video ref={videoRef} controls width='800px'></video>
+      <video
+        ref={videoRef}
+        controls
+        width='800px'
+        style={{
+          display: 'none',
+        }}
+      ></video>
+
       <br />
-      <button onClick={transcode}>Transcode avi to mp4</button>
-      <p ref={messageRef}></p>
+      <button onClick={transcode}>Transcode</button>
+      <p>{log}</p>
     </>
-  ) : (
-    <button onClick={load}>Load ffmpeg-core</button>
   );
 }
 
