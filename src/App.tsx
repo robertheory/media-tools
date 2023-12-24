@@ -1,26 +1,25 @@
-import { fetchFile } from '@ffmpeg/util'
-import { useEffect, useRef, useState } from 'react'
-import { Button } from './components/ui/button'
-import { ffmpegClient, loadFfmpeg } from './services/ffmpeg'
+import { Progress } from '@/components/ui/progress'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
+import { Input } from './components/ui/input'
+import { ffmpegClient, handleTranscode } from './services/ffmpeg'
 
 function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
-  const [log, setLog] = useState('')
+  const logsRef = useRef<HTMLDivElement | null>(null)
+  const [progress, setProgress] = useState(0)
 
-  const transcode = async () => {
-    await loadFfmpeg()
+  const handleFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files![0]
 
-    const videoURL = 'http://localhost:5173/bunny.webm'
+    if (!file) return
 
-    const ffmpeg = ffmpegClient
+    const url = URL.createObjectURL(file)
 
-    await ffmpeg.writeFile('input.webm', await fetchFile(videoURL))
-
-    await ffmpeg.exec(['-i', 'input.webm', 'output.mp4'])
-
-    const fileData = await ffmpeg.readFile('output.mp4')
-
-    const data = new Uint8Array(fileData as ArrayBuffer)
+    const data = await handleTranscode({
+      videoURL: url,
+      from: 'WEBM',
+      to: 'MP4',
+    })
 
     if (videoRef.current) {
       videoRef.current.style.display = 'block'
@@ -33,28 +32,65 @@ function App() {
 
   useEffect(() => {
     ffmpegClient.on('log', ({ message }) => {
-      setLog(message)
+      if (logsRef.current) {
+        logsRef.current.innerText = message
+      }
     })
 
-    // ffmpegClient.on('progress', ({ progress, time }) => {
-    //   console.log('progress, time', progress, time);
-    // });
+    ffmpegClient.on('progress', ({ progress }) => {
+      setProgress(Math.round(progress * 100))
+    })
   }, [])
 
   return (
-    <div className=" w-screen h-screen flex flex-col justify-center items-center">
-      <video
-        ref={videoRef}
-        controls
-        width="800px"
-        style={{
-          display: 'none',
-        }}
-      ></video>
+    <div
+      className="
+      w-screen h-screen flex flex-col justify-start items-center
+      bg-
+    "
+    >
+      <div
+        className="
+        w-full max-w-[900px] h-full bg-slate-300
+        flex flex-col justify-start items-center
+        p-8 gap-4
+      "
+      >
+        <h1 className="text-2xl font-bold">Convert Tools</h1>
 
-      <br />
-      <Button onClick={transcode}>Transcode</Button>
-      <p>{log}</p>
+        <video
+          ref={videoRef}
+          controls
+          width="800px"
+          style={{
+            display: 'none',
+          }}
+        ></video>
+
+        <Input
+          type="file"
+          placeholder="Arquivo"
+          accept=".webm"
+          className="max-w-[400px]"
+          onChange={handleFile}
+        />
+
+        <Progress value={progress} className="w-[60%]" />
+
+        <div
+          className="
+          w-full flex flex-col justify-start items-start
+        bg-slate-500 rounded-md p-4 text-white
+          gap-2
+        "
+        >
+          <h2 className="text-xl">Logs</h2>
+
+          <p ref={logsRef} className="font-light text-justify">
+            Log stdout
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
