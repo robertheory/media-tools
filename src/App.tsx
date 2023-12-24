@@ -56,7 +56,7 @@ function App() {
         p-8 gap-4
       "
       >
-        <h1 className="text-2xl font-bold">Convert Tools</h1>
+        <h1 className="text-2xl font-bold">Media Tools</h1>
 
         <video
           ref={videoRef}
