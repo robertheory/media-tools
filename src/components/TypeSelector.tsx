@@ -45,8 +45,8 @@ const TypeSelector = () => {
               <CommandItem
                 key={type}
                 value={type}
-                onSelect={(currentValue) => {
-                  setValue(currentValue === value ? null : currentValue)
+                onSelect={() => {
+                  setValue(value)
                   setOpen(false)
                 }}
               >
